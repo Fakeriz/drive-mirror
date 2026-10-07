@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+python-dotenv
+requests
+yt-dlp
+google-api-python-client
+google-auth
+itsdangerous

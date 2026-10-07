@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Drive Mirror</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #09090b; color: #fafafa;
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .card {
+    width: 100%; max-width: 520px; background: #161619;
+    border: 1px solid #2e2e33; border-radius: 16px; padding: 32px;
+  }
+  h1 { font-size: 24px; margin-bottom: 6px; }
+  p.sub { color: #a3a3a3; font-size: 14px; margin-bottom: 24px; }
+  label { display: block; font-size: 13px; color: #a3a3a3; margin: 14px 0 6px; }
+  input, select {
+    width: 100%; padding: 12px 14px; border-radius: 10px;
+    border: 1px solid #2e2e33; background: #09090b; color: #fafafa; font-size: 15px;
+  }
+  input:focus, select:focus { outline: none; border-color: #52525b; }
+  button, .btn {
+    display: block; width: 100%; margin-top: 20px; padding: 13px; border: none; border-radius: 10px;
+    background: #fafafa; color: #09090b; font-size: 15px; font-weight: 600; cursor: pointer;
+    text-align: center; text-decoration: none;
+  }
+  button:disabled { opacity: .5; cursor: wait; }
+  button.ghost, .btn.ghost {
+    background: transparent; color: #fafafa; border: 1px solid #2e2e33; margin-top: 12px;
+  }
+  .opt {
+    border: 1px solid #2e2e33; border-radius: 12px; padding: 20px; margin-top: 14px;
+  }
+  .opt h2 { font-size: 17px; margin-bottom: 6px; }
+  .opt p { font-size: 13px; color: #a3a3a3; line-height: 1.6; }
+  .opt .who { font-size: 13px; color: #fafafa; margin-top: 8px; }
+  .opt .logout { font-size: 12px; color: #a3a3a3; background: none; border: none;
+                 padding: 0; margin: 6px 0 0; width: auto; text-decoration: underline; cursor: pointer; }
+  .progress-wrap { margin-top: 24px; display: none; }
+  .bar { height: 8px; background: #2e2e33; border-radius: 99px; overflow: hidden; }
+  .bar > div { height: 100%; width: 0%; background: #fafafa; border-radius: 99px; transition: width .3s; }
+  .stage { margin-top: 10px; font-size: 14px; color: #a3a3a3; }
+  .result { margin-top: 20px; display: none; padding: 14px; border: 1px solid #2e2e33; border-radius: 10px; }
+  .result a { color: #fafafa; font-weight: 600; word-break: break-all; }
+  .error { margin-top: 20px; display: none; padding: 14px; border-radius: 10px;
+           background: #3f1d1d; border: 1px solid #7f2d2d; font-size: 14px; }
+  .hint { margin-top: 18px; font-size: 12px; color: #737373; line-height: 1.6; }
+  .back { background: none; border: none; color: #a3a3a3; font-size: 14px;
+          cursor: pointer; padding: 0; margin: 0 0 16px; width: auto; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="card">
+
+  <!-- PILIH MODE -->
+  <div id="view-choose">
+    <h1>Drive Mirror</h1>
+    <p class="sub">Tempel link apa pun — file-nya diunduh lalu disimpan ke Google Drive.</p>
+
+    <div class="opt">
+      <h2>Mode Tamu</h2>
+      <p>Tanpa login. File disimpan di Drive app dan kamu dapat link publik yang bisa dibagikan ke siapa pun.</p>
+      <button onclick="showForm('guest')">Lanjut sebagai Tamu</button>
+    </div>
+
+    <div class="opt">
+      <h2>Drive Saya</h2>
+      <p>Login dengan Google. File masuk ke Drive milikmu sendiri, di dalam folder "Drive Mirror".</p>
+      <div id="mine-area"><p class="who">Memeriksa status login…</p></div>
+    </div>
+  </div>
+
+  <!-- FORM MIRROR -->
+  <div id="view-form" class="hidden">
+    <button class="back" onclick="showChoose()">← Kembali</button>
+    <h1 id="form-title">Mode Tamu</h1>
+    <p class="sub" id="form-sub"></p>
+
+    <label for="url">Link</label>
+    <input id="url" type="url" placeholder="https://..." autocomplete="off">
+
+    <label for="quality">Resolusi video</label>
+    <select id="quality">
+      <option value="360p">360p — kecil</option>
+      <option value="480p">480p</option>
+      <option value="720p">720p</option>
+      <option value="1080p" selected>1080p</option>
+      <option value="terbaik">Terbaik — file besar</option>
+    </select>
+
+    <label for="mode">Tipe hasil</label>
+    <select id="mode" onchange="toggleQuality()">
+      <option value="video" selected>Video</option>
+      <option value="audio">Audio saja (MP3)</option>
+    </select>
+
+    <label for="token">Token (kalau server membutuhkannya)</label>
+    <input id="token" type="password" placeholder="opsional" autocomplete="off">
+
+    <button id="go" onclick="startMirror()">Mirror ke Drive</button>
+
+    <div class="progress-wrap" id="pw">
+      <div class="bar"><div id="bar"></div></div>
+      <div class="stage" id="stage">menunggu…</div>
+    </div>
+
+    <div class="result" id="result"></div>
+    <div class="error" id="error"></div>
+
+    <p class="hint">Mendukung link file langsung (mp4, pdf, zip, …) dan halaman video
+    seperti YouTube, TikTok, Instagram, dan X. Token tersimpan hanya di browser ini.</p>
+  </div>
+
+</div>
+
+<script>
+let currentTarget = 'guest';
+const tokenInput = document.getElementById('token');
+tokenInput.value = localStorage.getItem('dm_token') || '';
+tokenInput.addEventListener('change', () => localStorage.setItem('dm_token', tokenInput.value.trim()));
+
+function toggleQuality() {
+  const isAudio = document.getElementById('mode').value === 'audio';
+  const q = document.getElementById('quality');
+  q.style.display = isAudio ? 'none' : '';
+  q.previousElementSibling.style.display = isAudio ? 'none' : '';
+}
+
+function headers() {
+  const t = tokenInput.value.trim();
+  const h = { 'Content-Type': 'application/json' };
+  if (t) h['Authorization'] = 'Bearer ' + t;
+  return h;
+}
+
+async function init() {
+  const params = new URLSearchParams(location.search);
+  let me = { logged_in: false, oauth_ready: false };
+  try {
+    me = await (await fetch('/api/me')).json();
+  } catch (e) { /* server tidak terjangkau */ }
+  renderMineArea(me);
+  if (params.get('target') === 'mine') {
+    if (me.logged_in) showForm('mine');
+    else history.replaceState(null, '', '/');
+  }
+}
+
+function renderMineArea(me) {
+  const el = document.getElementById('mine-area');
+  if (me.logged_in) {
+    el.innerHTML = '<p class="who">Login sebagai ' + escapeHtml(me.email || me.name || 'Google') + '</p>' +
+      '<button onclick="showForm(\'mine\')">Lanjut ke Drive Saya</button>' +
+      '<button class="logout" onclick="logout()">Keluar</button>';
+  } else if (me.oauth_ready) {
+    el.innerHTML = '<a class="btn" href="/auth/google/login">Login dengan Google</a>';
+  } else {
+    el.innerHTML = '<p class="who">Login Google belum dikonfigurasi di server ini.</p>';
+  }
+}
+
+async function logout() {
+  await fetch('/auth/logout', { method: 'POST' });
+  location.reload();
+}
+
+function showChoose() {
+  document.getElementById('view-form').classList.add('hidden');
+  document.getElementById('view-choose').classList.remove('hidden');
+  history.replaceState(null, '', '/');
+}
+
+function showForm(target) {
+  currentTarget = target;
+  document.getElementById('form-title').textContent =
+    target === 'mine' ? 'Drive Saya' : 'Mode Tamu';
+  document.getElementById('form-sub').textContent =
+    target === 'mine'
+      ? 'File akan masuk ke folder "Drive Mirror" di Google Drive milikmu.'
+      : 'Tanpa login — hasil berupa link publik yang bisa dibagikan.';
+  document.getElementById('view-choose').classList.add('hidden');
+  document.getElementById('view-form').classList.remove('hidden');
+}
+
+async function startMirror() {
+  const url = document.getElementById('url').value.trim();
+  const go = document.getElementById('go');
+  const pw = document.getElementById('pw');
+  const result = document.getElementById('result');
+  const error = document.getElementById('error');
+  result.style.display = 'none'; error.style.display = 'none';
+  if (!url) return;
+
+  go.disabled = true; pw.style.display = 'block';
+  setProgress(0, 'mengirim…');
+
+  try {
+    const res = await fetch('/api/mirror', {
+      method: 'POST', headers: headers(),
+      body: JSON.stringify({
+        url,
+        quality: document.getElementById('quality').value,
+        mode: document.getElementById('mode').value,
+        target: currentTarget,
+      })
+    });
+    if (res.status === 401) {
+      const d = await res.json().catch(() => ({}));
+      throw new Error(d.detail || 'Tidak diizinkan.');
+    }
+    if (!res.ok) throw new Error((await res.json()).detail || 'Gagal memulai.');
+    const { job_id } = await res.json();
+    poll(job_id);
+  } catch (e) {
+    showError(e.message); go.disabled = false;
+  }
+}
+
+function setProgress(pct, stage) {
+  document.getElementById('bar').style.width = pct + '%';
+  document.getElementById('stage').textContent = stage + ' — ' + pct + '%';
+}
+
+function showError(msg) {
+  const e = document.getElementById('error');
+  e.textContent = 'Gagal: ' + msg;
+  e.style.display = 'block';
+}
+
+async function poll(job_id) {
+  const go = document.getElementById('go');
+  try {
+    const res = await fetch('/api/jobs/' + job_id, { headers: headers() });
+    const job = await res.json();
+    setProgress(job.progress || 0, job.stage || '');
+
+    if (job.status === 'done') {
+      const r = document.getElementById('result');
+      r.innerHTML = 'Selesai ✅<br><a href="' + job.drive_link +
+        '" target="_blank" rel="noopener">' + escapeHtml(job.filename || 'Buka di Google Drive') + '</a>';
+      r.style.display = 'block';
+      go.disabled = false;
+    } else if (job.status === 'error') {
+      showError(job.error || 'Terjadi kesalahan.');
+      go.disabled = false;
+    } else {
+      setTimeout(() => poll(job_id), 1000);
+    }
+  } catch (e) {
+    showError('Koneksi ke server terputus.');
+    go.disabled = false;
+  }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+init();
+</script>
+</body>
+</html>
