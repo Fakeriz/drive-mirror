@@ -62,6 +62,42 @@ def share_anyone(service, file_id: str):
     ).execute()
 
 
+def ensure_subfolder(service, parent_id: str, name: str) -> str:
+    """Cari/buat subfolder `name` di dalam folder `parent_id`. Return folder id."""
+    q = (
+        f"name='{name}' and '{parent_id}' in parents "
+        "and mimeType='application/vnd.google-apps.folder' and trashed=false"
+    )
+    res = (
+        service.files()
+        .list(
+            q=q,
+            fields="files(id)",
+            pageSize=1,
+            supportsAllDrives=True,
+            includeItemsFromAllDrives=True,
+        )
+        .execute()
+    )
+    files = res.get("files", [])
+    if files:
+        return files[0]["id"]
+    created = (
+        service.files()
+        .create(
+            body={
+                "name": name,
+                "mimeType": "application/vnd.google-apps.folder",
+                "parents": [parent_id],
+            },
+            fields="id",
+            supportsAllDrives=True,
+        )
+        .execute()
+    )
+    return created["id"]
+
+
 def ensure_folder(service, name: str) -> str:
     """Cari folder 'Drive Mirror' di Drive user, buat bila belum ada. Return folder id."""
     q = (

@@ -11,6 +11,10 @@ Dua opsi di halaman utama:
 - **Drive Saya** — login dengan Google (OAuth). File masuk ke **Drive
   milikmu sendiri**, di dalam folder "Drive Mirror" (dibuat otomatis).
 
+Struktur folder di Drive:
+- Mode tamu → `<DRIVE_FOLDER_ID>/Drive Mirror - Tamu/`
+- Drive saya → `Drive saya/Drive Mirror/` (dibuat otomatis)
+
 Mendukung:
 - **Link file langsung** — URL yang langsung mengunduh file
   (mp4, mp3, pdf, zip, gambar, dokumen, …)

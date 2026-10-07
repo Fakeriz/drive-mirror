@@ -8,12 +8,20 @@ from urllib.parse import unquote, urlparse
 
 import requests
 
-from drive_client import ensure_folder, sa_service, share_anyone, upload_file, user_service
+from drive_client import (
+    ensure_folder,
+    ensure_subfolder,
+    sa_service,
+    share_anyone,
+    upload_file,
+    user_service,
+)
 
 jobs: dict = {}
 _jobs_lock = threading.Lock()
 
 GUEST_FOLDER_FALLBACK = "Drive Mirror"
+GUEST_SUBFOLDER = "Drive Mirror - Tamu"
 
 # Situs yang butuh ekstraksi dulu (bukan link file langsung)
 VIDEO_DOMAINS = (
@@ -203,6 +211,9 @@ def run_mirror_job(
         else:
             service = sa_service()
             folder_id = os.environ.get("DRIVE_FOLDER_ID", "").strip()
+            if folder_id:
+                # pisahkan file tamu ke subfolder khusus biar rapi
+                folder_id = ensure_subfolder(service, folder_id, GUEST_SUBFOLDER)
             meta = upload_file(
                 service,
                 path,
