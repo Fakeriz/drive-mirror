@@ -96,10 +96,34 @@ mengakses file yang ia buat sendiri) + data profil dasar.
 Kalau `MIRROR_TOKEN` diisi, semua endpoint API butuh header
 `Authorization: Bearer <token>`.
 
+## Versi Bot Telegram
+
+Selain web, ada juga bot Telegram (`bot.py`): kirim link apa pun ke chat
+bot → bot mengunduh → mengunggah ke Drive → membalas link Drive-nya.
+Progress tampil live di chat.
+
+Bot berjalan dalam **mode tamu** (tanpa login Google), jadi
+`GUEST_MAX_MB` berlaku. Untuk "Drive saya", pakai versi web.
+
+```bash
+# 1. Chat ke @BotFather di Telegram -> /newbot -> salin tokennya
+# 2. Isi TELEGRAM_BOT_TOKEN di .env (opsional: TELEGRAM_ALLOWED_IDS)
+python bot.py
+```
+
+Bot memakai *polling*, jadi tidak butuh HTTPS/domain — cukup server/VPS
+yang jalan terus. Web (`uvicorn app:app`) dan bot bisa jalan bersamaan.
+
+Perintah bot:
+- `/start` / `/bantuan` — panduan
+- `/resolusi <360p|480p|720p|1080p|terbaik>` — atur resolusi video
+- `/tipe <video|audio>` — video biasa atau ekstrak jadi MP3
+
 ## Struktur
 
 ```
 app.py            # FastAPI: endpoint + OAuth Google + serve halaman web
+bot.py            # Bot Telegram (polling): kirim link -> balas link Drive
 mirror.py         # logika unduh (langsung / yt-dlp) + orkestrasi job
 drive_client.py   # upload resumable (service account & OAuth user)
 oauth.py          # helper login Google (OAuth 2.0)

@@ -147,10 +147,10 @@ async function init() {
     me = await (await fetch('/api/me')).json();
   } catch (e) { /* server tidak terjangkau */ }
   renderMineArea(me);
-  if (params.get('target') === 'mine') {
-    if (me.logged_in) showForm('mine');
-    else history.replaceState(null, '', '/');
-  }
+  const t = params.get('target');
+  if (t === 'mine' && me.logged_in) showForm('mine');
+  else if (t === 'guest') showForm('guest');
+  else if (t) history.replaceState(null, '', '/');
 }
 
 function renderMineArea(me) {
